@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArticleVerify</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background-color: #020202;
+        color: #EE7DD1;
+        font-family: "Pixelify Sans", sans-serif;
+        min-height: 100vh;
+       
+    }
+    .title {
+    font-size: 4rem;
+    color: #EE7DD1;
+    text-align: center;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.subtitle {
+    font-size: 1.3rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #ffffff;
+}
+
+.container {
+   max-width: 1000px;
+    margin: 2rem auto;
+    padding: 2rem;
+}
+.article-box {
+    width: 100%;
+    height: 200px;
+    background-color: #f5f0e8;
+    color: #000000;
+    padding: 1rem;
+    font-family: "Pixelify Sans", sans-serif;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+}
+    .buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    justify-content: center;
+    align-items: center;
+}
+
+
+
+.btn {
+    background-color: #ffffff;
+    color: #020202;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    font-family: "Pixelify Sans", sans-serif;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 0;
+    display: inline-block;
+    text-align: center;
+    min-width: 120px;
+}
+.result-box {
+    width: 100%;
+    padding: 2rem;
+    text-align: center;
+    font-size: 1.5rem;
+    display: none;
+    border-radius: 0;
+}
+
+.result-valid {
+    
+    background-color: #94D742;
+    color: #000000;
+}
+
+
+.result-invalid {
+    background-color:  #DC4F33;;
+    color: #ffffff;
+}
+
+</style>
+</head>
+<body>
+<div class="container">
+    <h1 class="title">ArticleVerify</h1>
+    <p class="subtitle">Unsure if your news articles are the from the correct source or if they have been edited? Use this article verification tool to ensure you are never misguided!</p>
+    <textarea class="article-box" id="article" placeholder="Paste your article here..."></textarea>
+    <div class="buttons">
+    <button class="btn" id="sign-btn"> SIGN</button>
+    <button class="btn" id="verify-btn"> VERIFY</button>
+    <button class="btn" id="attack-btn"> RUN ATTACKS</button>
+    <div class="result-box" id="result-box">
+    <p id="result-text"></p>
+<input type="hidden" id="signature">
+<input type="hidden" id="public-key">
+</div>
+</div>
+
+</div>
+<script>
+    document.getElementById("sign-btn").addEventListener("click", function() {
+        var article = document.getElementById("article").value;
+        fetch("/sign", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({article: article})
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("signature").value = data.signature;
+            document.getElementById("public-key").value = data.public_key;
+            var resultBox = document.getElementById("result-box");
+            resultBox.style.display = "block";
+            resultBox.className = "result-box result-valid";
+            document.getElementById("result-text").innerHTML = "✓ Article signed successfully!";
+        });
+    });
+
+    document.getElementById("verify-btn").addEventListener("click", function() {
+        var article = document.getElementById("article").value;
+        var signature = document.getElementById("signature").value;
+        var publicKey = document.getElementById("public-key").value;
+        fetch("/verify", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({article: article, signature: signature, public_key: publicKey})
+        })
+        .then(response => response.json())
+        .then(data => {
+            var resultBox = document.getElementById("result-box");
+            resultBox.style.display = "block";
+            resultBox.className = data.result === "valid" ? "result-box result-valid" : "result-box result-invalid";
+            document.getElementById("result-text").innerHTML = data.message;
+        });
+    });
+    document.getElementById("attack-btn").addEventListener("click", function() {
+    var article = document.getElementById("article").value;
+    var signature = document.getElementById("signature").value;
+    var publicKey = document.getElementById("public-key").value;
+    fetch("/attacks", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({article: article, signature: signature, public_key: publicKey})
+    })
+    .then(response => response.json())
+    .then(data => {
+        var resultBox = document.getElementById("result-box");
+        resultBox.style.display = "block";
+        resultBox.className = "result-box result-valid";
+        var html = "<p>Attack Results:</p>";
+var explanations = {
+    "Content Tampering": "We changed a word in your article",
+    "Signature Replay": "We used your signature on a completely different article",
+    "Wrong Public Key": "We tried verifying with a fake publisher's key",
+    "Impersonation": "We signed your article with a fake identity"
+};
+data.forEach(function(attack) {
+    html += "<p>" + (attack.detected ? "✓ " : "✗ ") + attack.attack + " — " + explanations[attack.attack] + " — " + (attack.detected ? "Attack blocked, system is protected!" : "Attack not blocked!") + "</p>";
+});
+        document.getElementById("result-text").innerHTML = html;
+    });
+});
+</script>
+</body>
+</html>
+
