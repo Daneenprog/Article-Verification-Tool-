@@ -36,7 +36,7 @@ Open http://localhost:5000 in your browser.
 All four are blocked every time.
 
 ## Honest Limitations
-It can proves authenticity but not the truth, a signed article can still contain misinformation
+It can proves authenticity but not the truth, a signed article can still contain misinformation from the publishers side. 
 Private keys are not stored permanently in this demo version
 
 This tool proves that an article came from who signed it and has not been changed since signing. It does not prove the article is true. A publisher can sign and distribute false information and it will verify correctly. Cryptography solves authenticity — not truth.
